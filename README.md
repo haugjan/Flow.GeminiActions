@@ -24,6 +24,12 @@ Triggered with the `ask` action keyword.
    after 1.5 s. On error the indicator turns into a red cross with the
    error message and stays visible for 5 s.
 
+If Gemini returns an overload signal (HTTP 503 *UNAVAILABLE* or 429
+*RESOURCE_EXHAUSTED*), the pill counts down `Gemini overloaded ·
+retrying in 5s ...` second by second and then sends the request again.
+A second overload bubbles up as the error message — total of two
+attempts.
+
 For longer text or quick experimentation, the last result row is
 **"Open editor ..."** which opens a dedicated window with multi-line
 input, an action picker, a result pane and a status line with its own

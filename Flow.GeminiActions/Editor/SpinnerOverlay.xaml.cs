@@ -19,6 +19,8 @@ public partial class SpinnerOverlay : Window
         Top = area.Top + (area.Height - Height) / 2;
     }
 
+    internal void SetTitle(string title) => TitleText.Text = title;
+
     internal void ShowResult(string message, bool success)
     {
         Spinner.Visibility = Visibility.Collapsed;

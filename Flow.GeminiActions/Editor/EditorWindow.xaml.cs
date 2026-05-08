@@ -65,6 +65,18 @@ public partial class EditorWindow : Window
         }
     }
 
+    private async Task CountdownAsync(TimeSpan delay)
+    {
+        var seconds = (int)Math.Ceiling(delay.TotalSeconds);
+        var token = _cts?.Token ?? CancellationToken.None;
+        for (var s = seconds; s > 0; s--)
+        {
+            StatusText.Text = $"Gemini overloaded · retrying in {s}s ...";
+            await Task.Delay(TimeSpan.FromSeconds(1), token).ConfigureAwait(true);
+        }
+        StatusText.Text = "Retrying ...";
+    }
+
     private async Task SendAsync(bool autoCopy)
     {
         if (ActionCombo.SelectedItem is not GeminiAction action)
@@ -82,7 +94,7 @@ public partial class EditorWindow : Window
 
         _cts?.Cancel();
         _cts = new CancellationTokenSource(
-            TimeSpan.FromSeconds(Math.Max(5, _settings.Timeout.TotalSeconds))
+            TimeSpan.FromSeconds(Math.Max(5, _settings.Timeout.TotalSeconds) * 2 + 5)
         );
 
         SendButton.IsEnabled = false;
@@ -93,7 +105,7 @@ public partial class EditorWindow : Window
         try
         {
             var output = await _gemini
-                .GenerateAsync(action.Instruction, text, _cts.Token)
+                .GenerateAsync(action.Instruction, text, _cts.Token, onOverloaded: CountdownAsync)
                 .ConfigureAwait(true);
             OutputBox.Text = output;
             if (autoCopy)

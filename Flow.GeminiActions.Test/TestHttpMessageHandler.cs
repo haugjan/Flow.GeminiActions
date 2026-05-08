@@ -6,8 +6,8 @@ namespace Flow.GeminiActions.Test;
 
 public class TestHttpMessageHandler : HttpMessageHandler
 {
-    private HttpStatusCode _statusCode = HttpStatusCode.OK;
-    private string _responseContent = "";
+    private readonly Queue<(HttpStatusCode statusCode, string content)> _queue = new();
+    private (HttpStatusCode statusCode, string content) _fallback = (HttpStatusCode.OK, "");
 
     public HttpRequestMessage? LastRequest { get; private set; }
     public string? LastRequestBody { get; private set; }
@@ -15,9 +15,12 @@ public class TestHttpMessageHandler : HttpMessageHandler
 
     public void SetResponse(HttpStatusCode statusCode, string content)
     {
-        _statusCode = statusCode;
-        _responseContent = content;
+        _queue.Clear();
+        _fallback = (statusCode, content);
     }
+
+    public void EnqueueResponse(HttpStatusCode statusCode, string content) =>
+        _queue.Enqueue((statusCode, content));
 
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
@@ -30,9 +33,10 @@ public class TestHttpMessageHandler : HttpMessageHandler
         if (request.Content != null)
             LastRequestBody = await request.Content.ReadAsStringAsync(cancellationToken);
 
-        return new HttpResponseMessage(_statusCode)
+        var (statusCode, content) = _queue.Count > 0 ? _queue.Dequeue() : _fallback;
+        return new HttpResponseMessage(statusCode)
         {
-            Content = new StringContent(_responseContent, Encoding.UTF8, "application/json"),
+            Content = new StringContent(content, Encoding.UTF8, "application/json"),
         };
     }
 }

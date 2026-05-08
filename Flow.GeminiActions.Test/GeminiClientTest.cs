@@ -13,12 +13,15 @@ public class GeminiClientTest
     )
     {
         var handler = new TestHttpMessageHandler();
-        var http = new HttpClient(handler)
-        {
-            BaseAddress = new Uri("https://generativelanguage.googleapis.com/"),
-        };
+        // Match the production factory shape: new HttpClient per call so the
+        // `using var` in GeminiClient.CallAsync doesn't dispose a shared instance.
+        Func<HttpClient> http = () =>
+            new HttpClient(handler, disposeHandler: false)
+            {
+                BaseAddress = new Uri("https://generativelanguage.googleapis.com/"),
+            };
         settings ??= new PluginSettings { ApiKey = "test-key", Model = "gemini-2.5-flash" };
-        return (new GeminiClient.GeminiClient(() => http, settings), handler);
+        return (new GeminiClient.GeminiClient(http, settings), handler);
     }
 
     [Fact]
@@ -130,5 +133,103 @@ public class GeminiClientTest
         await Should.ThrowAsync<InvalidOperationException>(() =>
             client.GenerateAsync("i", "t", TestContext.Current.CancellationToken)
         );
+    }
+
+    [Fact]
+    public async Task GenerateAsync_RetriesOnce_OnOverload_WhenCallbackProvided()
+    {
+        var (client, handler) = Build();
+        handler.EnqueueResponse(
+            HttpStatusCode.ServiceUnavailable,
+            """{"error":{"code":503,"message":"The model is overloaded.","status":"UNAVAILABLE"}}"""
+        );
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """{"candidates":[{"content":{"parts":[{"text":"second try wins"}]}}]}"""
+        );
+
+        var callbackInvoked = false;
+        var result = await client.GenerateAsync(
+            "i",
+            "t",
+            TestContext.Current.CancellationToken,
+            onOverloaded: _ =>
+            {
+                callbackInvoked = true;
+                return Task.CompletedTask;
+            }
+        );
+
+        result.ShouldBe("second try wins");
+        callbackInvoked.ShouldBeTrue();
+        handler.RequestCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_RetriesOnce_OnRateLimit_WhenCallbackProvided()
+    {
+        var (client, handler) = Build();
+        handler.EnqueueResponse(HttpStatusCode.TooManyRequests, """{"error":{"code":429}}""");
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """{"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}"""
+        );
+
+        var result = await client.GenerateAsync(
+            "i",
+            "t",
+            TestContext.Current.CancellationToken,
+            onOverloaded: _ => Task.CompletedTask
+        );
+
+        result.ShouldBe("ok");
+        handler.RequestCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_GivesUpAfterTwoOverloads()
+    {
+        var (client, handler) = Build();
+        handler.EnqueueResponse(HttpStatusCode.ServiceUnavailable, """{"error":{"code":503}}""");
+        handler.EnqueueResponse(HttpStatusCode.ServiceUnavailable, """{"error":{"code":503}}""");
+
+        await Should.ThrowAsync<HttpRequestException>(() =>
+            client.GenerateAsync(
+                "i",
+                "t",
+                TestContext.Current.CancellationToken,
+                onOverloaded: _ => Task.CompletedTask
+            )
+        );
+        handler.RequestCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_DoesNotRetry_WhenCallbackIsNull()
+    {
+        var (client, handler) = Build();
+        handler.SetResponse(HttpStatusCode.ServiceUnavailable, """{"error":{"code":503}}""");
+
+        await Should.ThrowAsync<HttpRequestException>(() =>
+            client.GenerateAsync("i", "t", TestContext.Current.CancellationToken)
+        );
+        handler.RequestCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_DoesNotRetry_OnNonRetryableStatus()
+    {
+        var (client, handler) = Build();
+        handler.SetResponse(HttpStatusCode.Unauthorized, """{"error":{"code":401}}""");
+
+        await Should.ThrowAsync<HttpRequestException>(() =>
+            client.GenerateAsync(
+                "i",
+                "t",
+                TestContext.Current.CancellationToken,
+                onOverloaded: _ => Task.CompletedTask
+            )
+        );
+        handler.RequestCount.ShouldBe(1);
     }
 }

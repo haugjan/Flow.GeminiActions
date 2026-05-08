@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using Flow.GeminiActions.Settings;
@@ -6,16 +7,24 @@ namespace Flow.GeminiActions.GeminiClient;
 
 internal interface IGeminiClient
 {
-    Task<string> GenerateAsync(string instruction, string text, CancellationToken token);
+    Task<string> GenerateAsync(
+        string instruction,
+        string text,
+        CancellationToken token,
+        Func<TimeSpan, Task>? onOverloaded = null
+    );
 }
 
 internal sealed class GeminiClient(Func<HttpClient> httpClientFactory, PluginSettings settings)
     : IGeminiClient
 {
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
+
     public async Task<string> GenerateAsync(
         string instruction,
         string text,
-        CancellationToken token
+        CancellationToken token,
+        Func<TimeSpan, Task>? onOverloaded = null
     )
     {
         if (string.IsNullOrWhiteSpace(settings.ApiKey))
@@ -23,6 +32,20 @@ internal sealed class GeminiClient(Func<HttpClient> httpClientFactory, PluginSet
                 "Gemini API key is missing. Open the plugin settings and paste your key."
             );
 
+        try
+        {
+            return await CallAsync(instruction, text, token).ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex)
+            when (onOverloaded is not null && IsRetryable(ex.StatusCode))
+        {
+            await onOverloaded(RetryDelay).ConfigureAwait(false);
+            return await CallAsync(instruction, text, token).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<string> CallAsync(string instruction, string text, CancellationToken token)
+    {
         var prompt = $"{instruction}\n\n---\n{text}";
         var request = new GeminiRequest(
             Contents: [new GeminiContent(Parts: [new GeminiPart(Text: prompt)])]
@@ -59,6 +82,9 @@ internal sealed class GeminiClient(Func<HttpClient> httpClientFactory, PluginSet
 
         return output.Trim();
     }
+
+    private static bool IsRetryable(HttpStatusCode? status) =>
+        status is HttpStatusCode.ServiceUnavailable or HttpStatusCode.TooManyRequests;
 
     private static string? TryExtractErrorMessage(string raw)
     {

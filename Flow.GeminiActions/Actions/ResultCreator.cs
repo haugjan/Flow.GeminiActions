@@ -88,11 +88,20 @@ internal sealed class ResultCreator(
         var overlay = ShowOverlay($"Gemini · {action.Title}");
         try
         {
-            using var cts = new CancellationTokenSource(
-                TimeSpan.FromSeconds(Math.Max(5, settings.Timeout.TotalSeconds))
+            // Allow extra headroom on top of the user-configured timeout so the
+            // overload retry window (5 s + second attempt) doesn't tip the whole
+            // operation into a timeout.
+            var totalBudget = TimeSpan.FromSeconds(
+                Math.Max(5, settings.Timeout.TotalSeconds) * 2 + 5
             );
+            using var cts = new CancellationTokenSource(totalBudget);
             var output = await gemini
-                .GenerateAsync(action.Instruction, text, cts.Token)
+                .GenerateAsync(
+                    action.Instruction,
+                    text,
+                    cts.Token,
+                    onOverloaded: delay => CountdownAsync(overlay, action.Title, delay, cts.Token)
+                )
                 .ConfigureAwait(false);
 
             SetClipboard(output);
@@ -111,6 +120,29 @@ internal sealed class ResultCreator(
             context.API.LogException(nameof(ResultCreator), "Gemini call failed", ex);
             FinishOverlay(overlay, $"Failed: {ex.Message}", success: false);
         }
+    }
+
+    private static async Task CountdownAsync(
+        SpinnerOverlay? overlay,
+        string actionTitle,
+        TimeSpan delay,
+        CancellationToken token
+    )
+    {
+        var seconds = (int)Math.Ceiling(delay.TotalSeconds);
+        for (var s = seconds; s > 0; s--)
+        {
+            UpdateOverlayTitle(overlay, $"Gemini overloaded · retrying in {s}s ...");
+            await Task.Delay(TimeSpan.FromSeconds(1), token).ConfigureAwait(false);
+        }
+        UpdateOverlayTitle(overlay, $"Gemini · {actionTitle} (retry)");
+    }
+
+    private static void UpdateOverlayTitle(SpinnerOverlay? overlay, string title)
+    {
+        if (overlay is null)
+            return;
+        Application.Current?.Dispatcher.Invoke(() => overlay.SetTitle(title));
     }
 
     private static SpinnerOverlay? ShowOverlay(string title)
