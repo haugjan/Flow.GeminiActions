@@ -114,13 +114,14 @@ internal sealed class ResultCreator(
         }
         catch (OperationCanceledException)
         {
-            FinishOverlay(
-                overlay,
-                userCancelled
-                    ? "Cancelled."
-                    : "Request timed out. Increase the timeout in settings.",
-                success: false
-            );
+            if (userCancelled)
+                CloseOverlay(overlay);
+            else
+                FinishOverlay(
+                    overlay,
+                    "Request timed out. Increase the timeout in settings.",
+                    success: false
+                );
         }
         catch (Exception ex)
         {
@@ -172,6 +173,13 @@ internal sealed class ResultCreator(
         if (overlay is null)
             return;
         Application.Current?.Dispatcher.Invoke(() => overlay.ShowResult(message, success));
+    }
+
+    private static void CloseOverlay(SpinnerOverlay? overlay)
+    {
+        if (overlay is null)
+            return;
+        Application.Current?.Dispatcher.Invoke(overlay.Close);
     }
 
     private static void SetClipboard(string text)
