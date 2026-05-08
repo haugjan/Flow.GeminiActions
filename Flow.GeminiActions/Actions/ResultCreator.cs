@@ -86,15 +86,20 @@ internal sealed class ResultCreator(
     private async Task RunAsync(GeminiAction action, string text)
     {
         var overlay = ShowOverlay($"Gemini · {action.Title}");
+        // Allow headroom on top of the user-configured timeout so the
+        // overload retry window (5 s + 10 s + three attempts) doesn't tip
+        // the whole operation into a hard timeout.
+        var totalBudget = TimeSpan.FromSeconds(Math.Max(5, settings.Timeout.TotalSeconds) * 3 + 15);
+        using var cts = new CancellationTokenSource(totalBudget);
+        var userCancelled = false;
+        using var escHook = new EscapeHook(() =>
+        {
+            userCancelled = true;
+            cts.Cancel();
+        });
+
         try
         {
-            // Allow extra headroom on top of the user-configured timeout so the
-            // overload retry window (5 s + second attempt) doesn't tip the whole
-            // operation into a timeout.
-            var totalBudget = TimeSpan.FromSeconds(
-                Math.Max(5, settings.Timeout.TotalSeconds) * 2 + 5
-            );
-            using var cts = new CancellationTokenSource(totalBudget);
             var output = await gemini
                 .GenerateAsync(
                     action.Instruction,
@@ -111,7 +116,9 @@ internal sealed class ResultCreator(
         {
             FinishOverlay(
                 overlay,
-                "Request timed out. Increase the timeout in settings.",
+                userCancelled
+                    ? "Cancelled."
+                    : "Request timed out. Increase the timeout in settings.",
                 success: false
             );
         }

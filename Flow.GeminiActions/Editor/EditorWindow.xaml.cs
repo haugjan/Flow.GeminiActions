@@ -47,6 +47,7 @@ public partial class EditorWindow : Window
         if (e.Key == Key.Escape)
         {
             e.Handled = true;
+            _cts?.Cancel();
             Close();
             return;
         }
@@ -94,7 +95,7 @@ public partial class EditorWindow : Window
 
         _cts?.Cancel();
         _cts = new CancellationTokenSource(
-            TimeSpan.FromSeconds(Math.Max(5, _settings.Timeout.TotalSeconds) * 2 + 5)
+            TimeSpan.FromSeconds(Math.Max(5, _settings.Timeout.TotalSeconds) * 3 + 15)
         );
 
         SendButton.IsEnabled = false;

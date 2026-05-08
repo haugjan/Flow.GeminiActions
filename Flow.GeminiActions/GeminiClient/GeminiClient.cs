@@ -18,7 +18,13 @@ internal interface IGeminiClient
 internal sealed class GeminiClient(Func<HttpClient> httpClientFactory, PluginSettings settings)
     : IGeminiClient
 {
-    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
+    // Delays between attempts on overload: 5 s before the second attempt,
+    // 10 s before the third. Three attempts total.
+    private static readonly TimeSpan[] RetryDelays =
+    [
+        TimeSpan.FromSeconds(5),
+        TimeSpan.FromSeconds(10),
+    ];
 
     public async Task<string> GenerateAsync(
         string instruction,
@@ -32,15 +38,20 @@ internal sealed class GeminiClient(Func<HttpClient> httpClientFactory, PluginSet
                 "Gemini API key is missing. Open the plugin settings and paste your key."
             );
 
-        try
+        for (var attempt = 0; ; attempt++)
         {
-            return await CallAsync(instruction, text, token).ConfigureAwait(false);
-        }
-        catch (HttpRequestException ex)
-            when (onOverloaded is not null && IsRetryable(ex.StatusCode))
-        {
-            await onOverloaded(RetryDelay).ConfigureAwait(false);
-            return await CallAsync(instruction, text, token).ConfigureAwait(false);
+            try
+            {
+                return await CallAsync(instruction, text, token).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+                when (onOverloaded is not null
+                    && attempt < RetryDelays.Length
+                    && IsRetryable(ex.StatusCode)
+                )
+            {
+                await onOverloaded(RetryDelays[attempt]).ConfigureAwait(false);
+            }
         }
     }
 

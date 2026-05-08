@@ -26,9 +26,13 @@ Triggered with the `ask` action keyword.
 
 If Gemini returns an overload signal (HTTP 503 *UNAVAILABLE* or 429
 *RESOURCE_EXHAUSTED*), the pill counts down `Gemini overloaded ·
-retrying in 5s ...` second by second and then sends the request again.
-A second overload bubbles up as the error message — total of two
-attempts.
+retrying in Xs ...` second by second and then sends the request again.
+Up to three attempts total — first retry after 5 s, second retry after
+10 s. A third overload surfaces as the error message.
+
+Press **ESC** at any time to abort an in-flight request. In the editor
+this also closes the window; in direct mode it cancels via a system-
+wide keyboard hook so it works without the pill stealing focus.
 
 For longer text or quick experimentation, the last result row is
 **"Open editor ..."** which opens a dedicated window with multi-line

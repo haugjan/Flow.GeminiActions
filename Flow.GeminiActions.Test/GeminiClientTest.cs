@@ -187,9 +187,38 @@ public class GeminiClientTest
     }
 
     [Fact]
-    public async Task GenerateAsync_GivesUpAfterTwoOverloads()
+    public async Task GenerateAsync_RetriesTwice_OnRepeatedOverload()
     {
         var (client, handler) = Build();
+        handler.EnqueueResponse(HttpStatusCode.ServiceUnavailable, """{"error":{"code":503}}""");
+        handler.EnqueueResponse(HttpStatusCode.ServiceUnavailable, """{"error":{"code":503}}""");
+        handler.EnqueueResponse(
+            HttpStatusCode.OK,
+            """{"candidates":[{"content":{"parts":[{"text":"third try wins"}]}}]}"""
+        );
+
+        var delays = new List<TimeSpan>();
+        var result = await client.GenerateAsync(
+            "i",
+            "t",
+            TestContext.Current.CancellationToken,
+            onOverloaded: delay =>
+            {
+                delays.Add(delay);
+                return Task.CompletedTask;
+            }
+        );
+
+        result.ShouldBe("third try wins");
+        handler.RequestCount.ShouldBe(3);
+        delays.ShouldBe([TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10)]);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_GivesUpAfterThreeOverloads()
+    {
+        var (client, handler) = Build();
+        handler.EnqueueResponse(HttpStatusCode.ServiceUnavailable, """{"error":{"code":503}}""");
         handler.EnqueueResponse(HttpStatusCode.ServiceUnavailable, """{"error":{"code":503}}""");
         handler.EnqueueResponse(HttpStatusCode.ServiceUnavailable, """{"error":{"code":503}}""");
 
@@ -201,7 +230,7 @@ public class GeminiClientTest
                 onOverloaded: _ => Task.CompletedTask
             )
         );
-        handler.RequestCount.ShouldBe(2);
+        handler.RequestCount.ShouldBe(3);
     }
 
     [Fact]
