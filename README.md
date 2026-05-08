@@ -16,12 +16,18 @@ Triggered with the `ask` action keyword.
    and trigger `ask` with no arguments.
 2. Pick one of the configured actions: **Translate**, **Correct**,
    **Bullets to text**, or any custom shortcut you've added.
-3. The plugin sends `<instruction>\n\n---\n<text>` to Gemini, copies
-   the response to the clipboard, and shows a Flow Launcher toast.
+3. The plugin sends `<instruction>\n\n---\n<text>` to Gemini. While the
+   request is in flight, a small dark pill appears in the centre of the
+   working area showing a rotating spinner and the action name. When
+   the response arrives the spinner becomes a green check mark,
+   `Result copied to clipboard.` is shown and the pill self-dismisses
+   after 1.5 s. On error the indicator turns into a red cross with the
+   error message and stays visible for 5 s.
 
 For longer text or quick experimentation, the last result row is
 **"Open editor ..."** which opens a dedicated window with multi-line
-input, an action picker, a result pane, and these shortcuts:
+input, an action picker, a result pane and a status line with its own
+spinner. Shortcuts:
 
 | Shortcut    | Effect                                       |
 |-------------|----------------------------------------------|
