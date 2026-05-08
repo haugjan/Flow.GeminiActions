@@ -6,15 +6,19 @@ namespace Flow.GeminiActions.Actions;
 
 internal interface IActionRunner
 {
-    Task<List<Result>> QueryAsync(Query query, CancellationToken token);
+    Task<List<Result>> QueryAsync(string searchText, string actionKeyword, CancellationToken token);
 }
 
 internal sealed class ActionRunner(PluginSettings settings, IResultCreator resultCreator)
     : IActionRunner
 {
-    public Task<List<Result>> QueryAsync(Query query, CancellationToken token)
+    public Task<List<Result>> QueryAsync(
+        string searchText,
+        string actionKeyword,
+        CancellationToken token
+    )
     {
-        var typed = query.Search?.Trim() ?? string.Empty;
+        var typed = searchText?.Trim() ?? string.Empty;
         var text = string.IsNullOrEmpty(typed) ? ReadClipboard() : typed;
         var fromClipboard = string.IsNullOrEmpty(typed) && !string.IsNullOrEmpty(text);
 
@@ -55,15 +59,19 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
                 0,
                 resultCreator.CreateHint(
                     "Using clipboard text",
-                    $"Type after \"{query.ActionKeyword}\" to override. Source: {Preview(text)}"
+                    $"{text.Length} characters from clipboard. Type after \"{actionKeyword}\" to override."
                 )
             );
+
+        results.Add(resultCreator.CreateOpenEditorResult(text));
 
         return Task.FromResult(results);
     }
 
-    private List<Result> EmptyHints() =>
-        [
+    private List<Result> EmptyHints()
+    {
+        var hints = new List<Result>
+        {
             resultCreator.CreateHint(
                 "Type some text after the action keyword",
                 "Or copy text to the clipboard first, then trigger the plugin without arguments."
@@ -72,7 +80,10 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
                 $"{settings.Actions.Count} actions configured",
                 "Translate, Correct, Bullets to text ... edit them in plugin settings."
             ),
-        ];
+            resultCreator.CreateOpenEditorResult(string.Empty),
+        };
+        return hints;
+    }
 
     private static string ReadClipboard()
     {
@@ -97,11 +108,5 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
         {
             return string.Empty;
         }
-    }
-
-    private static string Preview(string text)
-    {
-        var oneLine = text.Replace('\n', ' ').Replace('\r', ' ').Trim();
-        return oneLine.Length <= 60 ? oneLine : oneLine[..57] + "...";
     }
 }

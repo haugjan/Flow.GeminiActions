@@ -5,6 +5,9 @@ on:
     paths-ignore:
       - .github/workflows/*
       - .gitignore
+      - LICENSE
+      - README.md
+      - CLAUDE.md
       - dist/*
   workflow_dispatch:
 
@@ -30,7 +33,13 @@ jobs:
       - name: Show version
         run: echo ${{ steps.version.outputs.prop }}
 
-      - name: Build
+      - name: Restore
+        run: dotnet restore Flow.GeminiActions.slnx
+
+      - name: Test
+        run: dotnet test Flow.GeminiActions.slnx --no-restore --configuration Release --logger "console;verbosity=normal"
+
+      - name: Publish
         run: dotnet publish "Flow.GeminiActions/Flow.GeminiActions.csproj" -c Release -r win-x64 --no-self-contained -o "GeminiActions-${{ steps.version.outputs.prop }}"
 
       - name: Upload artifact

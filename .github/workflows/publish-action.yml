@@ -6,6 +6,9 @@ on:
     paths-ignore:
       - .github/workflows/*
       - .gitignore
+      - LICENSE
+      - README.md
+      - CLAUDE.md
       - dist/**
   workflow_dispatch:
 
@@ -45,9 +48,14 @@ jobs:
           Write-Host "Updated: $updated  Latest: $latest  Required: $required"
 
       - name: Setup .NET
+        if: steps.gate.outputs.required == 'True'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
+
+      - name: Test
+        if: steps.gate.outputs.required == 'True'
+        run: dotnet test Flow.GeminiActions.slnx -c Release --logger "console;verbosity=normal"
 
       - name: Build (publish)
         if: steps.gate.outputs.required == 'True'

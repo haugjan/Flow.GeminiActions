@@ -28,10 +28,18 @@ Triggered with the `ask` action keyword.
     - `SettingsView.xaml(.cs)`, `SettingsViewModel.cs`, `Configurator.cs`
   - `plugin.json` — Flow Launcher manifest (action keyword `ask`, ID,
     version, icon)
+  - `Editor/EditorWindow.xaml(.cs)` — separate WPF window opened from
+    the "Open editor ..." result row; multi-line input + action picker +
+    read-only result; ESC closes, Ctrl+Enter sends and copies the
+    response to the clipboard (the Send button does not auto-copy)
   - `Build-Plugin.ps1` — packages the plugin into a ZIP for manual install
   - `Start.ps1` — local dev helper: stops Flow Launcher, builds, copies
     the output into `%APPDATA%\FlowLauncher\Plugins\Gemini Actions-<version>`,
     restarts Flow Launcher
+- `Flow.GeminiActions.Test/` — xUnit v3 + Shouldly + NSubstitute tests.
+  Requires the `xunit.runner.visualstudio` adapter package next to
+  `xunit.v3` so that `dotnet test` can discover the tests; without it
+  VSTest reports "No test is available".
 - `.github/workflows/`
   - `build-action.yml` — PR build (`dotnet publish` win-x64, uploads
     artifact `GeminiActions-<version>`)
@@ -43,6 +51,7 @@ Triggered with the `ask` action keyword.
 ```powershell
 dotnet restore
 dotnet build Flow.GeminiActions.sln -c Release
+dotnet test  Flow.GeminiActions.sln
 ```
 
 For interactive plugin development, run `Flow.GeminiActions\Start.ps1`

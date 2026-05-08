@@ -31,7 +31,11 @@ public class Main : IAsyncPlugin, ISettingProvider
     public Task<List<Result>> QueryAsync(Query query, CancellationToken token)
     {
         _settingsViewModel.SyncActionsToSettings();
-        return _runner.QueryAsync(query, token);
+        return _runner.QueryAsync(
+            query.Search ?? string.Empty,
+            query.ActionKeyword ?? string.Empty,
+            token
+        );
     }
 
     public Control CreateSettingPanel() => _configurator.CreateSettingPanel();
