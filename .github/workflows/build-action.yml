@@ -1,0 +1,42 @@
+name: Build Pull Request
+
+on:
+  pull_request:
+    paths-ignore:
+      - .github/workflows/*
+      - .gitignore
+      - dist/*
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Read version from plugin.json
+        id: version
+        uses: notiz-dev/github-action-json-property@release
+        with:
+          path: Flow.GeminiActions/plugin.json
+          prop_path: Version
+
+      - name: Show version
+        run: echo ${{ steps.version.outputs.prop }}
+
+      - name: Build
+        run: dotnet publish "Flow.GeminiActions/Flow.GeminiActions.csproj" -c Release -r win-x64 --no-self-contained -o "GeminiActions-${{ steps.version.outputs.prop }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GeminiActions-${{ steps.version.outputs.prop }}
+          path: GeminiActions-${{ steps.version.outputs.prop }}
+          if-no-files-found: error
+          retention-days: 14

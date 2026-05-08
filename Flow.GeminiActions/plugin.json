@@ -1,0 +1,15 @@
+{
+  "ID": "F4D7B5C2-3A1E-4F8B-9D6E-2A8C7B4F1E9A",
+  "ActionKeywords": [
+    "ask"
+  ],
+  "Name": "Gemini Actions",
+  "Description": "Run pre-configured Gemini prompts (translate, correct, rewrite ...) against your text and copy the result to the clipboard.",
+  "Author": "Jan Haug",
+  "Version": "0.1.0",
+  "Language": "csharp",
+  "Website": "https://github.com/haugjan/Flow.GeminiActions",
+  "IcoPath": "Images/icon.png",
+  "ExecuteFileName": "Flow.GeminiActions.dll",
+  "MinFlowLauncherVersion": "2.0.0"
+}
