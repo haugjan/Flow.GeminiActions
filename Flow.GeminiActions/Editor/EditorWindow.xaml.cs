@@ -86,6 +86,7 @@ public partial class EditorWindow : Window
         );
 
         SendButton.IsEnabled = false;
+        Spinner.Visibility = Visibility.Visible;
         StatusText.Text = $"Running '{action.Title}' ...";
         OutputBox.Text = string.Empty;
 
@@ -116,6 +117,7 @@ public partial class EditorWindow : Window
         }
         finally
         {
+            Spinner.Visibility = Visibility.Collapsed;
             SendButton.IsEnabled = true;
         }
     }
