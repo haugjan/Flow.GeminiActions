@@ -96,28 +96,20 @@ internal sealed class ResultCreator(
                 .ConfigureAwait(false);
 
             SetClipboard(output);
-            context.API.ShowMsg(
-                $"Gemini · {action.Title}",
-                "Result copied to clipboard.",
-                MainIcon
-            );
+            FinishOverlay(overlay, "Result copied to clipboard.", success: true);
         }
         catch (OperationCanceledException)
         {
-            context.API.ShowMsg(
-                $"Gemini · {action.Title}",
+            FinishOverlay(
+                overlay,
                 "Request timed out. Increase the timeout in settings.",
-                MainIcon
+                success: false
             );
         }
         catch (Exception ex)
         {
             context.API.LogException(nameof(ResultCreator), "Gemini call failed", ex);
-            context.API.ShowMsg($"Gemini · {action.Title} failed", ex.Message, MainIcon);
-        }
-        finally
-        {
-            CloseOverlay(overlay);
+            FinishOverlay(overlay, $"Failed: {ex.Message}", success: false);
         }
     }
 
@@ -136,11 +128,11 @@ internal sealed class ResultCreator(
         return overlay;
     }
 
-    private static void CloseOverlay(SpinnerOverlay? overlay)
+    private static void FinishOverlay(SpinnerOverlay? overlay, string message, bool success)
     {
         if (overlay is null)
             return;
-        Application.Current?.Dispatcher.Invoke(overlay.Close);
+        Application.Current?.Dispatcher.Invoke(() => overlay.ShowResult(message, success));
     }
 
     private static void SetClipboard(string text)

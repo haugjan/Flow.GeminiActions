@@ -3,8 +3,8 @@
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   Title="Gemini Actions"
-  Width="260"
-  Height="56"
+  Width="380"
+  Height="64"
   AllowsTransparency="True"
   Background="Transparent"
   Focusable="False"
@@ -17,52 +17,80 @@
 >
   <Border
     Margin="6"
-    Padding="16,0,18,0"
+    Padding="18,0,20,0"
     Background="#222"
-    CornerRadius="10"
+    CornerRadius="12"
   >
     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-      <Path
-        Width="18"
-        Height="18"
+      <Grid
+        Width="20"
+        Height="20"
         VerticalAlignment="Center"
-        RenderTransformOrigin="0.5,0.5"
-        Stroke="#EEE"
-        StrokeEndLineCap="Round"
-        StrokeStartLineCap="Round"
-        StrokeThickness="2.5"
       >
-        <Path.Data>
-          <PathGeometry>
-            <PathFigure StartPoint="9,1">
-              <ArcSegment
-                IsLargeArc="False"
-                Point="17,9"
-                Size="8,8"
-                SweepDirection="Clockwise"
-              />
-            </PathFigure>
-          </PathGeometry>
-        </Path.Data>
-        <Path.RenderTransform>
-          <RotateTransform x:Name="SpinnerRotation" Angle="0" />
-        </Path.RenderTransform>
-        <Path.Triggers>
-          <EventTrigger RoutedEvent="Loaded">
-            <BeginStoryboard>
-              <Storyboard RepeatBehavior="Forever">
-                <DoubleAnimation
-                  From="0"
-                  To="360"
-                  Storyboard.TargetName="SpinnerRotation"
-                  Storyboard.TargetProperty="Angle"
-                  Duration="0:0:1"
+        <!--  Spinner (running)  -->
+        <Path
+          x:Name="Spinner"
+          Width="20"
+          Height="20"
+          RenderTransformOrigin="0.5,0.5"
+          Stroke="#EEE"
+          StrokeEndLineCap="Round"
+          StrokeStartLineCap="Round"
+          StrokeThickness="2.5"
+        >
+          <Path.Data>
+            <PathGeometry>
+              <PathFigure StartPoint="10,1">
+                <ArcSegment
+                  IsLargeArc="False"
+                  Point="19,10"
+                  Size="9,9"
+                  SweepDirection="Clockwise"
                 />
-              </Storyboard>
-            </BeginStoryboard>
-          </EventTrigger>
-        </Path.Triggers>
-      </Path>
+              </PathFigure>
+            </PathGeometry>
+          </Path.Data>
+          <Path.RenderTransform>
+            <RotateTransform x:Name="SpinnerRotation" Angle="0" />
+          </Path.RenderTransform>
+          <Path.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+              <BeginStoryboard>
+                <Storyboard RepeatBehavior="Forever">
+                  <DoubleAnimation
+                    From="0"
+                    To="360"
+                    Storyboard.TargetName="SpinnerRotation"
+                    Storyboard.TargetProperty="Angle"
+                    Duration="0:0:1"
+                  />
+                </Storyboard>
+              </BeginStoryboard>
+            </EventTrigger>
+          </Path.Triggers>
+        </Path>
+        <!--  Success checkmark  -->
+        <Path
+          x:Name="SuccessIcon"
+          Data="M 4,10 L 9,15 L 17,5"
+          Stroke="#4ADE80"
+          StrokeEndLineCap="Round"
+          StrokeLineJoin="Round"
+          StrokeStartLineCap="Round"
+          StrokeThickness="3"
+          Visibility="Collapsed"
+        />
+        <!--  Error cross  -->
+        <Path
+          x:Name="ErrorIcon"
+          Data="M 4,4 L 16,16 M 16,4 L 4,16"
+          Stroke="#F87171"
+          StrokeEndLineCap="Round"
+          StrokeStartLineCap="Round"
+          StrokeThickness="3"
+          Visibility="Collapsed"
+        />
+      </Grid>
       <TextBlock
         x:Name="TitleText"
         Margin="14,0,0,0"
