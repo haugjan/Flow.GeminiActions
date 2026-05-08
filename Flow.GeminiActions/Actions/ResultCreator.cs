@@ -85,6 +85,7 @@ internal sealed class ResultCreator(
 
     private async Task RunAsync(GeminiAction action, string text)
     {
+        var overlay = ShowOverlay($"Gemini · {action.Title}");
         try
         {
             using var cts = new CancellationTokenSource(
@@ -114,6 +115,32 @@ internal sealed class ResultCreator(
             context.API.LogException(nameof(ResultCreator), "Gemini call failed", ex);
             context.API.ShowMsg($"Gemini · {action.Title} failed", ex.Message, MainIcon);
         }
+        finally
+        {
+            CloseOverlay(overlay);
+        }
+    }
+
+    private static SpinnerOverlay? ShowOverlay(string title)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null)
+            return null;
+
+        SpinnerOverlay? overlay = null;
+        dispatcher.Invoke(() =>
+        {
+            overlay = new SpinnerOverlay(title);
+            overlay.Show();
+        });
+        return overlay;
+    }
+
+    private static void CloseOverlay(SpinnerOverlay? overlay)
+    {
+        if (overlay is null)
+            return;
+        Application.Current?.Dispatcher.Invoke(overlay.Close);
     }
 
     private static void SetClipboard(string text)
