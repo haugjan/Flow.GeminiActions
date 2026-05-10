@@ -31,16 +31,25 @@
       FontSize="14"
       Text="Gemini API Key"
     />
-    <PasswordBox
-      x:Name="ApiKeyBox"
+    <StackPanel
       Grid.Row="0"
       Grid.Column="1"
-      Width="600"
       Margin="{StaticResource SettingPanelItemRightTopBottomMargin}"
       HorizontalAlignment="Left"
       VerticalAlignment="Center"
-      PasswordChanged="ApiKeyBox_PasswordChanged"
-    />
+      Orientation="Vertical"
+    >
+      <PasswordBox
+        x:Name="ApiKeyBox"
+        Width="600"
+        PasswordChanged="ApiKeyBox_PasswordChanged"
+      />
+      <TextBlock Margin="0,4,0,0" FontSize="12">
+        <Hyperlink NavigateUri="https://aistudio.google.com/apikey" RequestNavigate="Hyperlink_RequestNavigate">
+          Get a Gemini API key &#x2192;
+        </Hyperlink>
+      </TextBlock>
+    </StackPanel>
 
     <TextBlock
       Grid.Row="1"
