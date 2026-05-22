@@ -112,6 +112,9 @@ Open Flow Launcher → Settings → Plugins → **Gemini Actions**:
 
 ## Build & test
 
+The plugin targets `net9.0-windows`. A `global.json` pins the build to
+the .NET 9 SDK, so make sure it is installed.
+
 ```powershell
 dotnet restore
 dotnet build Flow.GeminiActions.slnx -c Release

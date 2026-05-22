@@ -45,14 +45,23 @@ Triggered with the `ask` action keyword.
     artifact `GeminiActions-<version>`)
   - `publish-action.yml` — release on push to `main`, tags
     `v<plugin.json Version>`, attaches the published ZIP
+- `global.json` — pins the build to the .NET 9 SDK (see Build & test).
 
 ## Build & test
 
 ```powershell
 dotnet restore
-dotnet build Flow.GeminiActions.sln -c Release
-dotnet test  Flow.GeminiActions.sln
+dotnet build Flow.GeminiActions.slnx -c Release
+dotnet test  Flow.GeminiActions.slnx
 ```
+
+The solution targets `net9.0-windows` and `global.json` pins the build
+to the .NET 9 SDK. Building with a .NET 10 SDK selects a newer .NET 9
+apphost pack (e.g. `9.0.16`) that is usually not installed locally and
+cannot always be restored on a locked-down network; the test project,
+which xUnit v3 forces to build an app host, then fails with
+`MSB3030 ("apphost.exe ... was not found")`. Keeping the build on a
+.NET 9 SDK uses the apphost pack that ships with the installed runtime.
 
 For interactive plugin development, run `Flow.GeminiActions\Start.ps1`
 from the project directory.
