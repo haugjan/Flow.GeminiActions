@@ -19,10 +19,18 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
     )
     {
         var typed = searchText?.Trim() ?? string.Empty;
-        var text = string.IsNullOrEmpty(typed) ? ReadClipboard() : typed;
-        var fromClipboard = string.IsNullOrEmpty(typed) && !string.IsNullOrEmpty(text);
+        var hasTyped = !string.IsNullOrEmpty(typed);
 
-        if (string.IsNullOrWhiteSpace(text))
+        // With no text after the action keyword the source is the clipboard.
+        // Read it once here only to decide whether to show action rows or the
+        // empty-state hints; the text actually sent to Gemini is read again
+        // when the result fires (see textProvider below). Flow Launcher caches
+        // result rows, so a clipboard value captured at query time could be
+        // replayed long after the user copied something else.
+        var clipboard = hasTyped ? string.Empty : ReadClipboard();
+        var fromClipboard = !hasTyped && !string.IsNullOrEmpty(clipboard);
+
+        if (!hasTyped && !fromClipboard)
             return Task.FromResult(EmptyHints());
 
         if (string.IsNullOrWhiteSpace(settings.ApiKey))
@@ -47,11 +55,16 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
                 }
             );
 
+        // Typed text is fixed for this query. For the clipboard fallback the
+        // provider re-reads the clipboard the moment the user picks an action,
+        // so it always reflects what is on the clipboard "now".
+        Func<string> textProvider = hasTyped ? () => typed : ReadClipboard;
+
         var results = settings
             .Actions.Where(a =>
                 !string.IsNullOrWhiteSpace(a.Title) && !string.IsNullOrWhiteSpace(a.Instruction)
             )
-            .Select(a => resultCreator.CreateActionResult(a, text))
+            .Select(a => resultCreator.CreateActionResult(a, textProvider))
             .ToList();
 
         if (fromClipboard)
@@ -59,11 +72,11 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
                 0,
                 resultCreator.CreateHint(
                     "Using clipboard text",
-                    $"{text.Length} characters from clipboard. Type after \"{actionKeyword}\" to override."
+                    $"{clipboard.Length} characters on the clipboard. Type after \"{actionKeyword}\" to override."
                 )
             );
 
-        results.Add(resultCreator.CreateOpenEditorResult(text));
+        results.Add(resultCreator.CreateOpenEditorResult(textProvider));
 
         return Task.FromResult(results);
     }
@@ -80,7 +93,7 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
                 $"{settings.Actions.Count} actions configured",
                 "Translate, Correct, Bullets to text ... edit them in plugin settings."
             ),
-            resultCreator.CreateOpenEditorResult(string.Empty),
+            resultCreator.CreateOpenEditorResult(() => string.Empty),
         };
         return hints;
     }

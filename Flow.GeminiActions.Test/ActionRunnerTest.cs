@@ -12,10 +12,10 @@ public class ActionRunnerTest
     {
         var creator = Substitute.For<IResultCreator>();
         creator
-            .CreateActionResult(Arg.Any<GeminiAction>(), Arg.Any<string>())
+            .CreateActionResult(Arg.Any<GeminiAction>(), Arg.Any<Func<string>>())
             .Returns(call => new Result { Title = ((GeminiAction)call[0]).Title });
         creator
-            .CreateOpenEditorResult(Arg.Any<string>())
+            .CreateOpenEditorResult(Arg.Any<Func<string>>())
             .Returns(_ => new Result { Title = "Open editor ..." });
         creator
             .CreateHint(Arg.Any<string>(), Arg.Any<string>())
@@ -112,12 +112,33 @@ public class ActionRunnerTest
 
         creator
             .Received(3)
-            .CreateActionResult(Arg.Any<GeminiAction>(), Arg.Is<string>(s => s == secret));
+            .CreateActionResult(
+                Arg.Any<GeminiAction>(),
+                Arg.Is<Func<string>>(provider => provider() == secret)
+            );
         creator
             .DidNotReceive()
             .CreateHint(Arg.Is<string>(s => s.Contains(secret)), Arg.Any<string>());
         creator
             .DidNotReceive()
             .CreateHint(Arg.Any<string>(), Arg.Is<string>(s => s.Contains(secret)));
+    }
+
+    [Fact]
+    public async Task TypedText_PassesTextProviderResolvingToTheTypedText()
+    {
+        // The action result must carry a provider, not a pre-captured string,
+        // so the clipboard fallback can re-read at action time. For typed text
+        // the provider resolves to that text every time it is called.
+        var settings = new PluginSettings { ApiKey = "key" };
+        var (runner, creator) = Build(settings);
+
+        await runner.QueryAsync("translate me", "ask", TestContext.Current.CancellationToken);
+
+        var provider = (Func<string>)
+            creator.ReceivedCalls().First(c => c.GetMethodInfo().Name == "CreateActionResult")
+                .GetArguments()[1]!;
+        provider().ShouldBe("translate me");
+        provider().ShouldBe("translate me");
     }
 }
