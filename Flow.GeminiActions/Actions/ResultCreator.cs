@@ -8,8 +8,8 @@ namespace Flow.GeminiActions.Actions;
 
 internal interface IResultCreator
 {
-    Result CreateActionResult(GeminiAction action, string text);
-    Result CreateOpenEditorResult(string text);
+    Result CreateActionResult(GeminiAction action, Func<string> textProvider);
+    Result CreateOpenEditorResult(Func<string> textProvider);
     Result CreateHint(string title, string subtitle);
     Result CreateError(string title, string subtitle);
 }
@@ -23,7 +23,7 @@ internal sealed class ResultCreator(
     private const string MainIcon = "Images/icon.png";
     private const string HintIcon = "Images/hint.png";
 
-    public Result CreateActionResult(GeminiAction action, string text) =>
+    public Result CreateActionResult(GeminiAction action, Func<string> textProvider) =>
         new()
         {
             Title = action.Title,
@@ -33,12 +33,16 @@ internal sealed class ResultCreator(
             IcoPath = MainIcon,
             Action = ctx =>
             {
+                // Resolve the text now, on the Flow Launcher UI thread, before
+                // the launcher window hides. For the clipboard fallback this
+                // reads the live clipboard rather than a stale captured value.
+                var text = textProvider();
                 _ = Task.Run(() => RunAsync(action, text));
                 return true;
             },
         };
 
-    public Result CreateOpenEditorResult(string text) =>
+    public Result CreateOpenEditorResult(Func<string> textProvider) =>
         new()
         {
             Title = "Open editor ...",
@@ -46,7 +50,7 @@ internal sealed class ResultCreator(
             IcoPath = MainIcon,
             Action = ctx =>
             {
-                ShowEditor(text);
+                ShowEditor(textProvider());
                 return true;
             },
         };
