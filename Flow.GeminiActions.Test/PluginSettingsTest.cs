@@ -15,11 +15,11 @@ public class PluginSettingsTest
     }
 
     [Fact]
-    public void Constructor_DefaultsToFlashModel()
+    public void Constructor_DefaultsToFlashLiteModel()
     {
         var settings = new PluginSettings();
 
-        settings.Model.ShouldBe("gemini-2.5-flash");
+        settings.Model.ShouldBe("gemini-2.5-flash-lite");
     }
 
     [Fact]
