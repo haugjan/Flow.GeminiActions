@@ -5,7 +5,7 @@ public sealed class PluginSettings
     public PluginSettings()
     {
         ApiKey = string.Empty;
-        Model = "gemini-2.5-flash";
+        Model = "gemini-2.5-flash-lite";
         Timeout = TimeSpan.FromSeconds(30);
         Actions = DefaultActions();
     }

@@ -82,7 +82,7 @@ Open Flow Launcher → Settings → Plugins → **Gemini Actions**:
 - **Gemini API Key** — get one from
   [aistudio.google.com](https://aistudio.google.com/app/apikey). Stored
   as a `PasswordBox` value in your Flow Launcher settings JSON.
-- **Model** — defaults to `gemini-2.5-flash`. Any model exposed by the
+- **Model** — defaults to `gemini-2.5-flash-lite`. Any model exposed by the
   `generativelanguage.googleapis.com/v1beta/models/{model}:generateContent`
   endpoint works.
 - **Timeout** — request timeout in seconds (5–120).
