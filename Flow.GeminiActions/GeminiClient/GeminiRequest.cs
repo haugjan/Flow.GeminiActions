@@ -10,4 +10,7 @@ internal sealed record GeminiContent(
     [property: JsonPropertyName("parts")] IReadOnlyList<GeminiPart> Parts
 );
 
-internal sealed record GeminiPart([property: JsonPropertyName("text")] string Text);
+internal sealed record GeminiPart(
+    [property: JsonPropertyName("text")] string Text,
+    [property: JsonPropertyName("thought")] bool Thought = false
+);

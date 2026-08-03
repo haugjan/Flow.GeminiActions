@@ -9,7 +9,7 @@ internal sealed record GeminiResponse(
 {
     public string? FirstText() =>
         Candidates?.FirstOrDefault()?.Content?.Parts is { Count: > 0 } parts
-            ? string.Concat(parts.Select(p => p.Text))
+            ? string.Concat(parts.Where(p => !p.Thought).Select(p => p.Text))
             : null;
 }
 

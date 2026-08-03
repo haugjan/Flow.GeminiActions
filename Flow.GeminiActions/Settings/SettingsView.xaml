@@ -121,12 +121,35 @@
         CanUserDeleteRows="False"
         HeadersVisibility="Column"
         ItemsSource="{Binding Actions}"
-        RowHeight="26"
       >
         <DataGrid.Columns>
           <DataGridTextColumn Width="160" Binding="{Binding Title}" Header="Title" />
           <DataGridTextColumn Width="220" Binding="{Binding Description}" Header="Description" />
-          <DataGridTextColumn Width="*" Binding="{Binding Instruction}" Header="Instruction" />
+          <DataGridTemplateColumn Width="*" Header="Instruction">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <TextBlock
+                  Margin="4,3"
+                  Text="{Binding Instruction}"
+                  TextWrapping="Wrap"
+                  VerticalAlignment="Top"
+                />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+            <DataGridTemplateColumn.CellEditingTemplate>
+              <DataTemplate>
+                <TextBox
+                  AcceptsReturn="True"
+                  MinHeight="80"
+                  MaxHeight="240"
+                  Padding="2"
+                  Text="{Binding Instruction, UpdateSourceTrigger=PropertyChanged}"
+                  TextWrapping="Wrap"
+                  VerticalScrollBarVisibility="Auto"
+                />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellEditingTemplate>
+          </DataGridTemplateColumn>
           <DataGridTemplateColumn Width="80" Header="">
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
