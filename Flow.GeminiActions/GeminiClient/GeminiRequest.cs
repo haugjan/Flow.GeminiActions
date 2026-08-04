@@ -3,7 +3,16 @@ using System.Text.Json.Serialization;
 namespace Flow.GeminiActions.GeminiClient;
 
 internal sealed record GeminiRequest(
-    [property: JsonPropertyName("contents")] IReadOnlyList<GeminiContent> Contents
+    [property: JsonPropertyName("contents")] IReadOnlyList<GeminiContent> Contents,
+    [property: JsonPropertyName("generationConfig")] GeminiGenerationConfig? GenerationConfig = null
+);
+
+internal sealed record GeminiGenerationConfig(
+    [property: JsonPropertyName("thinkingConfig")] GeminiThinkingConfig? ThinkingConfig = null
+);
+
+internal sealed record GeminiThinkingConfig(
+    [property: JsonPropertyName("thinkingBudget")] int ThinkingBudget
 );
 
 internal sealed record GeminiContent(
