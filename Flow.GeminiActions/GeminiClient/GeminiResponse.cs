@@ -7,10 +7,15 @@ internal sealed record GeminiResponse(
     [property: JsonPropertyName("error")] GeminiError? Error
 )
 {
-    public string? FirstText() =>
-        Candidates?.FirstOrDefault()?.Content?.Parts is { Count: > 0 } parts
-            ? string.Concat(parts.Where(p => !p.Thought).Select(p => p.Text))
-            : null;
+    public string? FirstText()
+    {
+        var parts = Candidates?.FirstOrDefault()?.Content?.Parts;
+        if (parts is not { Count: > 0 })
+            return null;
+
+        var text = string.Concat(parts.Where(p => !p.Thought).Select(p => p.Text));
+        return text.Length > 0 ? text : string.Concat(parts.Select(p => p.Text));
+    }
 }
 
 internal sealed record GeminiCandidate(

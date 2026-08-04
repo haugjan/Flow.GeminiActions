@@ -59,7 +59,10 @@ internal sealed class GeminiClient(Func<HttpClient> httpClientFactory, PluginSet
     {
         var prompt = $"{instruction}\n\n---\n{text}";
         var request = new GeminiRequest(
-            Contents: [new GeminiContent(Parts: [new GeminiPart(Text: prompt)])]
+            Contents: [new GeminiContent(Parts: [new GeminiPart(Text: prompt)])],
+            GenerationConfig: new GeminiGenerationConfig(
+                ThinkingConfig: new GeminiThinkingConfig(ThinkingBudget: 0)
+            )
         );
 
         var path = $"v1beta/models/{Uri.EscapeDataString(settings.Model)}:generateContent";
