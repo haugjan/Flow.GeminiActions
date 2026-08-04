@@ -6,7 +6,7 @@
   "Name": "Gemini Actions",
   "Description": "Run pre-configured Gemini prompts (translate, correct, rewrite ...) against your text and copy the result to the clipboard.",
   "Author": "Jan Haug",
-  "Version": "1.1.4",
+  "Version": "1.1.5",
   "Language": "csharp",
   "Website": "https://github.com/haugjan/Flow.GeminiActions",
   "IcoPath": "Images/icon.png",
