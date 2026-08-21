@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 namespace Flow.GeminiActions.GeminiClient;
 
 internal sealed record GeminiRequest(
+    [property: JsonPropertyName("system_instruction")] GeminiContent SystemInstruction,
     [property: JsonPropertyName("contents")] IReadOnlyList<GeminiContent> Contents,
     [property: JsonPropertyName("generationConfig")] GeminiGenerationConfig? GenerationConfig = null
 );

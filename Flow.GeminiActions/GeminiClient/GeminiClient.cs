@@ -57,9 +57,9 @@ internal sealed class GeminiClient(Func<HttpClient> httpClientFactory, PluginSet
 
     private async Task<string> CallAsync(string instruction, string text, CancellationToken token)
     {
-        var prompt = $"{instruction}\n\n---\n{text}";
         var request = new GeminiRequest(
-            Contents: [new GeminiContent(Parts: [new GeminiPart(Text: prompt)])],
+            SystemInstruction: new GeminiContent(Parts: [new GeminiPart(Text: instruction)]),
+            Contents: [new GeminiContent(Parts: [new GeminiPart(Text: text)])],
             GenerationConfig: new GeminiGenerationConfig(
                 ThinkingConfig: new GeminiThinkingConfig(ThinkingBudget: 0)
             )

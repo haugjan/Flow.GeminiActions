@@ -76,7 +76,7 @@ public class GeminiClientTest
     }
 
     [Fact]
-    public async Task GenerateAsync_SendsInstructionAndTextSeparatedByDashes()
+    public async Task GenerateAsync_SendsInstructionAsSystemInstruction_AndTextAsContent()
     {
         var (client, handler) = Build();
         handler.SetResponse(
@@ -91,9 +91,9 @@ public class GeminiClientTest
         );
 
         handler.LastRequestBody.ShouldNotBeNull();
+        handler.LastRequestBody.ShouldContain("system_instruction");
         handler.LastRequestBody.ShouldContain("Translate to English");
         handler.LastRequestBody.ShouldContain("Hallo Welt");
-        handler.LastRequestBody.ShouldContain("---");
     }
 
     [Fact]
