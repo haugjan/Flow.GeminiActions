@@ -94,6 +94,8 @@ public class GeminiClientTest
         handler.LastRequestBody.ShouldContain("system_instruction");
         handler.LastRequestBody.ShouldContain("Translate to English");
         handler.LastRequestBody.ShouldContain("Hallo Welt");
+        // "thought: false" must not appear in outgoing requests
+        handler.LastRequestBody.ShouldNotContain("thought");
     }
 
     [Fact]

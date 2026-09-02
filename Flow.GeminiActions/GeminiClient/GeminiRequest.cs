@@ -22,5 +22,5 @@ internal sealed record GeminiContent(
 
 internal sealed record GeminiPart(
     [property: JsonPropertyName("text")] string Text,
-    [property: JsonPropertyName("thought")] bool Thought = false
+    [property: JsonPropertyName("thought"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] bool Thought = false
 );
