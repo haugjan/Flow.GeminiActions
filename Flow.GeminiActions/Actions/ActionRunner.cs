@@ -21,16 +21,30 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
         var typed = searchText?.Trim() ?? string.Empty;
         var hasTyped = !string.IsNullOrEmpty(typed);
 
-        // With no text after the action keyword the source is the clipboard.
+        // If the typed text is a prefix of an action title the user is filtering
+        // the list, not providing input. Fall back to clipboard in that case and
+        // narrow the visible actions to those whose title starts with the typed text.
+        var validActions = settings.Actions.Where(a =>
+            !string.IsNullOrWhiteSpace(a.Title) && !string.IsNullOrWhiteSpace(a.Instruction)
+        ).ToList();
+
+        var isActionFilter = hasTyped && validActions.Any(a =>
+            a.Title.StartsWith(typed, StringComparison.OrdinalIgnoreCase)
+        );
+
+        // With no text (or when the text is an action filter) the source is the clipboard.
         // Read it once here only to decide whether to show action rows or the
         // empty-state hints; the text actually sent to Gemini is read again
         // when the result fires (see textProvider below). Flow Launcher caches
         // result rows, so a clipboard value captured at query time could be
         // replayed long after the user copied something else.
-        var clipboard = hasTyped ? string.Empty : ReadClipboard();
-        var fromClipboard = !hasTyped && !string.IsNullOrEmpty(clipboard);
+        var clipboard = (hasTyped && !isActionFilter) ? string.Empty : ReadClipboard();
+        var fromClipboard = isActionFilter
+            ? !string.IsNullOrEmpty(clipboard)
+            : !hasTyped && !string.IsNullOrEmpty(clipboard);
 
-        if (!hasTyped && !fromClipboard)
+        var hasInput = (hasTyped && !isActionFilter) || fromClipboard;
+        if (!hasInput)
             return Task.FromResult(EmptyHints());
 
         if (string.IsNullOrWhiteSpace(settings.ApiKey))
@@ -58,16 +72,17 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
         // Typed text is fixed for this query. For the clipboard fallback the
         // provider re-reads the clipboard the moment the user picks an action,
         // so it always reflects what is on the clipboard "now".
-        Func<string> textProvider = hasTyped ? () => typed : ReadClipboard;
+        Func<string> textProvider = (hasTyped && !isActionFilter) ? () => typed : ReadClipboard;
 
-        var results = settings
-            .Actions.Where(a =>
-                !string.IsNullOrWhiteSpace(a.Title) && !string.IsNullOrWhiteSpace(a.Instruction)
-            )
+        var filteredActions = isActionFilter
+            ? validActions.Where(a => a.Title.StartsWith(typed, StringComparison.OrdinalIgnoreCase))
+            : validActions;
+
+        var results = filteredActions
             .Select(a => resultCreator.CreateActionResult(a, textProvider))
             .ToList();
 
-        if (hasTyped)
+        if (hasTyped && !isActionFilter)
             results.Insert(
                 0,
                 resultCreator.CreateHint(

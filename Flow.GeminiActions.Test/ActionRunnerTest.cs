@@ -145,4 +145,59 @@ public class ActionRunnerTest
         provider().ShouldBe("translate me");
         provider().ShouldBe("translate me");
     }
+
+    [Fact]
+    public async Task ActionFilter_PartialActionTitle_TreatsAsFilterNotInput()
+    {
+        // "trans" is a prefix of "Translate" → treated as action filter,
+        // not as input text. No action results for "trans" as input.
+        var settings = new PluginSettings { ApiKey = "key" };
+        var (runner, _) = Build(settings);
+
+        var results = await runner.QueryAsync(
+            "trans",
+            "ask",
+            TestContext.Current.CancellationToken
+        );
+
+        // With no clipboard content the filter path falls through to empty hints.
+        results.ShouldAllBe(r =>
+            r.Title != "Translate" && r.Title != "Correct" && r.Title != "Bullets to text"
+        );
+        results.Any(r => r.Title.Contains("Using typed text")).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task ActionFilter_MatchingIsCaseInsensitive()
+    {
+        var settings = new PluginSettings { ApiKey = "key" };
+        var (runner, _) = Build(settings);
+
+        var results = await runner.QueryAsync(
+            "TRANS",
+            "ask",
+            TestContext.Current.CancellationToken
+        );
+
+        results.ShouldAllBe(r => r.Title != "Translate");
+        results.Any(r => r.Title.Contains("Using typed text")).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task ActionFilter_TextLongerThanAnyTitle_TreatsAsInput()
+    {
+        // "translate me" is longer than the action title "Translate", so it
+        // is NOT a prefix match and must be treated as typed input.
+        var settings = new PluginSettings { ApiKey = "key" };
+        var (runner, _) = Build(settings);
+
+        var results = await runner.QueryAsync(
+            "translate me",
+            "ask",
+            TestContext.Current.CancellationToken
+        );
+
+        results.First().Title.ShouldContain("Using typed text");
+        results.Skip(1).Any(r => r.Title == "Translate").ShouldBeTrue();
+    }
 }
