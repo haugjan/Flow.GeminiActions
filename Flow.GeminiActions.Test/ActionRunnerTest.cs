@@ -147,10 +147,10 @@ public class ActionRunnerTest
     }
 
     [Fact]
-    public async Task ActionFilter_PartialActionTitle_TreatsAsFilterNotInput()
+    public async Task ActionFilter_PartialActionTitle_ShowsMatchingActionAndNoTypedTextHint()
     {
-        // "trans" is a prefix of "Translate" → treated as action filter,
-        // not as input text. No action results for "trans" as input.
+        // "trans" is a prefix of "Translate" → treated as action filter.
+        // Even with no clipboard the matching action must be visible.
         var settings = new PluginSettings { ApiKey = "key" };
         var (runner, _) = Build(settings);
 
@@ -160,10 +160,8 @@ public class ActionRunnerTest
             TestContext.Current.CancellationToken
         );
 
-        // With no clipboard content the filter path falls through to empty hints.
-        results.ShouldAllBe(r =>
-            r.Title != "Translate" && r.Title != "Correct" && r.Title != "Bullets to text"
-        );
+        results.Any(r => r.Title == "Translate").ShouldBeTrue();
+        results.Any(r => r.Title == "Correct").ShouldBeFalse();
         results.Any(r => r.Title.Contains("Using typed text")).ShouldBeFalse();
     }
 
@@ -179,7 +177,7 @@ public class ActionRunnerTest
             TestContext.Current.CancellationToken
         );
 
-        results.ShouldAllBe(r => r.Title != "Translate");
+        results.Any(r => r.Title == "Translate").ShouldBeTrue();
         results.Any(r => r.Title.Contains("Using typed text")).ShouldBeFalse();
     }
 
