@@ -43,8 +43,11 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
             ? !string.IsNullOrEmpty(clipboard)
             : !hasTyped && !string.IsNullOrEmpty(clipboard);
 
+        // Show empty hints only when there is no typed input AND no action filter active.
+        // If the user is filtering by action name, show the matching actions even when
+        // the clipboard is empty — they may still add text by typing after the filter word.
         var hasInput = (hasTyped && !isActionFilter) || fromClipboard;
-        if (!hasInput)
+        if (!hasInput && !isActionFilter)
             return Task.FromResult(EmptyHints());
 
         if (string.IsNullOrWhiteSpace(settings.ApiKey))
@@ -96,6 +99,14 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
                 resultCreator.CreateHint(
                     "Using clipboard text",
                     $"{clipboard.Length} characters on the clipboard. Type after \"{actionKeyword}\" to override."
+                )
+            );
+        else if (isActionFilter)
+            results.Insert(
+                0,
+                resultCreator.CreateHint(
+                    "Clipboard is empty",
+                    "Copy text to the clipboard first, then trigger the action."
                 )
             );
 
