@@ -67,7 +67,15 @@ internal sealed class ActionRunner(PluginSettings settings, IResultCreator resul
             .Select(a => resultCreator.CreateActionResult(a, textProvider))
             .ToList();
 
-        if (fromClipboard)
+        if (hasTyped)
+            results.Insert(
+                0,
+                resultCreator.CreateHint(
+                    $"Using typed text ({typed.Length} chars)",
+                    $"Clear the input after \"{actionKeyword}\" to use the clipboard instead."
+                )
+            );
+        else if (fromClipboard)
             results.Insert(
                 0,
                 resultCreator.CreateHint(

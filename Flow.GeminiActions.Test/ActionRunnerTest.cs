@@ -39,7 +39,10 @@ public class ActionRunnerTest
             TestContext.Current.CancellationToken
         );
 
+        // Hint row prepended when typed text is present
+        results.First().Title.ShouldContain("Using typed text");
         results
+            .Skip(1)
             .Select(r => r.Title)
             .ShouldBe(["Translate", "Correct", "Bullets to text", "Open editor ..."]);
     }
@@ -97,7 +100,8 @@ public class ActionRunnerTest
             TestContext.Current.CancellationToken
         );
 
-        results.Select(r => r.Title).ShouldBe(["Good", "Open editor ..."]);
+        results.First().Title.ShouldContain("Using typed text");
+        results.Skip(1).Select(r => r.Title).ShouldBe(["Good", "Open editor ..."]);
     }
 
     [Fact]
